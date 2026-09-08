@@ -2,8 +2,8 @@ name: CI
 
 on:
   workflow_dispatch:
-  pull_request:
-  push:
+  # pull_request:
+  # push:
 
 jobs:
   build-and-test:
@@ -97,64 +97,64 @@ jobs:
           output_dir: ${{ github.workspace }}/tests-results_dir
           nb_parallel_threads: '4'
 
-      - name: Notify dashboard
-        if: always() && startsWith(github.repository, 'sofa-framework') && startsWith(github.ref, 'refs/heads/master') # we are not on a fork and on master
-        env:
-          DASH_AUTH: ${{ secrets.PLUGIN_DASH }}
-        shell: bash
-        run: |
+      # - name: Notify dashboard
+      #   if: always() && startsWith(github.repository, 'sofa-framework') && startsWith(github.ref, 'refs/heads/master') # we are not on a fork and on master
+      #   env:
+      #     DASH_AUTH: ${{ secrets.PLUGIN_DASH }}
+      #   shell: bash
+      #   run: |
 
-          test_status=$([ '${{ steps.tests.outcome }}' == 'success' ] && \&& \
-                        echo 'true' || echo 'false')
+      #     test_status=$([ '${{ steps.tests.outcome }}' == 'success' ] && \&& \
+      #                   echo 'true' || echo 'false')
 
-          build_status=$([ '${{ steps.build-install.outcome }}' == 'success' ] && \
-                         echo 'true' || echo 'false')
+      #     build_status=$([ '${{ steps.build-install.outcome }}' == 'success' ] && \
+      #                    echo 'true' || echo 'false')
 
-          binary_status=$([ '${{ steps.sanitize.outcome }}' == 'success' ] && \
-                         [ '${{ steps.create-artifact.outcome }}' == 'success' ] && \
-                         [ '${{ steps.install-artifact.outcome }}' == 'success' ] && \
-                         echo 'true' || echo 'false')
-          os=$(echo "${{ matrix.os }}" | awk -F- '{ print $1 }')
-
-
-          curl -X POST -H "X-API-KEY: $DASH_AUTH" -H "Content-Type: application/json" -d \
-          "{\"id\":\"$(echo "${{ github.repository }}" | awk -F/ '{ print $2 }')\",\
-           \"github_ref\":\"${{ github.sha }}\",\
-           \"url\":\"https://github.com/${{ github.repository }}/actions/runs/${{ github.run_id }}\",\
-           \"build\":$build_status,\
-           \"tests\":$test_status,\
-           \"os\":\"$os\",\
-           \"binary\":$binary_status}"\
-           https://sofa-framework.org:5000/api/v1/plugins
+      #     binary_status=$([ '${{ steps.sanitize.outcome }}' == 'success' ] && \
+      #                    [ '${{ steps.create-artifact.outcome }}' == 'success' ] && \
+      #                    [ '${{ steps.install-artifact.outcome }}' == 'success' ] && \
+      #                    echo 'true' || echo 'false')
+      #     os=$(echo "${{ matrix.os }}" | awk -F- '{ print $1 }')
 
 
-  deploy:
-    name: Deploy artifacts
-    if: always() && startsWith(github.repository, 'sofa-framework') && (startsWith(github.ref, 'refs/heads/') || startsWith(github.ref, 'refs/tags/')) # we are not on a fork and on a branch or a tag (not a PR)    needs: [build-and-test]
-    needs: [build-and-test]
-    runs-on: ubuntu-latest
-    continue-on-error: true
-    steps:
-      - name: Get artifacts
-        uses: actions/download-artifact@v4.1.7
-        with:
-          path: artifacts
+      #     curl -X POST -H "X-API-KEY: $DASH_AUTH" -H "Content-Type: application/json" -d \
+      #     "{\"id\":\"$(echo "${{ github.repository }}" | awk -F/ '{ print $2 }')\",\
+      #      \"github_ref\":\"${{ github.sha }}\",\
+      #      \"url\":\"https://github.com/${{ github.repository }}/actions/runs/${{ github.run_id }}\",\
+      #      \"build\":$build_status,\
+      #      \"tests\":$test_status,\
+      #      \"os\":\"$os\",\
+      #      \"binary\":$binary_status}"\
+      #      https://sofa-framework.org:5000/api/v1/plugins
 
-      - name: Zip artifacts
-        shell: bash
-        run: |
-          cd $GITHUB_WORKSPACE/artifacts
-          for artifact in *; do
-            zip $artifact.zip -r $artifact/*
-          done
-      - name: Upload release
-        uses: softprops/action-gh-release@v1
-        with:
-          name: ${{ github.ref_name }}
-          tag_name: release-${{ github.ref_name }}
-          fail_on_unmatched_files: false
-          target_commitish: ${{ github.sha }}
-          files: |
-            artifacts/BeamAdapter_*_Linux.zip
-            artifacts/BeamAdapter_*_Windows.zip
-            artifacts/BeamAdapter_*_macOS.zip
+
+  # deploy:
+  #   name: Deploy artifacts
+  #   if: always() && startsWith(github.repository, 'sofa-framework') && (startsWith(github.ref, 'refs/heads/') || startsWith(github.ref, 'refs/tags/')) # we are not on a fork and on a branch or a tag (not a PR)    needs: [build-and-test]
+  #   needs: [build-and-test]
+  #   runs-on: ubuntu-latest
+  #   continue-on-error: true
+  #   steps:
+  #     - name: Get artifacts
+  #       uses: actions/download-artifact@v4.1.7
+  #       with:
+  #         path: artifacts
+
+  #     - name: Zip artifacts
+  #       shell: bash
+  #       run: |
+  #         cd $GITHUB_WORKSPACE/artifacts
+  #         for artifact in *; do
+  #           zip $artifact.zip -r $artifact/*
+  #         done
+  #     - name: Upload release
+  #       uses: softprops/action-gh-release@v1
+  #       with:
+  #         name: ${{ github.ref_name }}
+  #         tag_name: release-${{ github.ref_name }}
+  #         fail_on_unmatched_files: false
+  #         target_commitish: ${{ github.sha }}
+  #         files: |
+  #           artifacts/BeamAdapter_*_Linux.zip
+  #           artifacts/BeamAdapter_*_Windows.zip
+  #           artifacts/BeamAdapter_*_macOS.zip
