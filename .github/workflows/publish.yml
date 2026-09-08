@@ -2,9 +2,9 @@ name: Publish Doxygen on Pages
 
 # generate only if master has been updated (or on workflow_dispatch trigger)
 on:
-  push:    
-    branches:
-      - master
+  # push:    
+  #   branches:
+  #     - master
   workflow_dispatch:
 
 jobs:
